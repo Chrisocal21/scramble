@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <title>Scramble</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: #111111;
+        touch-action: none;
+      }
+
+      canvas {
+        display: block;
+      }
+
+      /*
+       * Rotate overlay -- shown when the device is in portrait orientation.
+       * Hidden by default on desktop (always landscape-ish).
+       * On mobile, the @media query controls visibility.
+       */
+      #rotate-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        background: #111111;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 28px;
+        user-select: none;
+      }
+
+      #rotate-overlay svg {
+        width: 72px;
+        height: 72px;
+        opacity: 0.85;
+        animation: rotate-hint 2s ease-in-out infinite;
+      }
+
+      #rotate-overlay p {
+        font-family: monospace;
+        font-size: 18px;
+        color: #aaaaaa;
+        letter-spacing: 0.08em;
+        text-align: center;
+        line-height: 1.6;
+      }
+
+      @keyframes rotate-hint {
+        0%   { transform: rotate(0deg);   }
+        40%  { transform: rotate(-90deg); }
+        60%  { transform: rotate(-90deg); }
+        100% { transform: rotate(0deg);   }
+      }
+
+      /* Show the overlay whenever the viewport is taller than it is wide. */
+      @media (orientation: portrait) {
+        #rotate-overlay {
+          display: flex;
+        }
+      }
+    </style>
+  </head>
+  <body>
+
+    <!--
+      Rotate overlay.
+      Visible in portrait on mobile -- hidden automatically in landscape.
+      SVG is a phone-with-rotation-arrow icon, drawn inline (no external file).
+    -->
+    <div id="rotate-overlay" aria-live="polite" role="alert">
+      <svg viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <!-- Phone outline -->
+        <rect x="20" y="10" width="32" height="52" rx="5" ry="5"
+              stroke="#ffffff" stroke-width="3" fill="none"/>
+        <!-- Home indicator -->
+        <rect x="30" y="55" width="12" height="3" rx="1.5" fill="#ffffff" opacity="0.5"/>
+        <!-- Rotation arrow (arc + arrowhead pointing right-and-down) -->
+        <path d="M 54 18 A 22 22 0 0 1 18 54"
+              stroke="#ffffff" stroke-width="3" stroke-linecap="round" fill="none"/>
+        <polyline points="52,26 54,18 62,20"
+                  stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      </svg>
+      <p>ROTATE YOUR DEVICE<br>TO PLAY</p>
+    </div>
+
+    <script type="module" src="/src/main.js"></script>
+
+    <script>
+      // Attempt to lock the screen to landscape using the Screen Orientation API.
+      // This works on Android Chrome and some other browsers.
+      // iOS Safari does not support this API -- the CSS overlay handles that case.
+      (function () {
+        function lockLandscape() {
+          if (screen.orientation && screen.orientation.lock) {
+            screen.orientation.lock('landscape').catch(function () {
+              // Lock not supported or not in fullscreen -- the CSS overlay
+              // will prompt the user to rotate manually.
+            });
+          }
+        }
+
+        // Try on load.
+        lockLandscape();
+
+        // Re-try after any orientation change (some browsers require user gesture first).
+        window.addEventListener('orientationchange', lockLandscape);
+      })();
+    </script>
+
+  </body>
+</html>
