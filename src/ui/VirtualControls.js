@@ -46,7 +46,11 @@ export class VirtualControls {
     this.scene         = scene;
     this.input_manager = input_manager;
 
-    // Left panel — solid black
+    this._pointer_map = new Map();
+
+    if (!scene.sys.game.device.input.touch) return;
+
+    // Left panel — solid black (touch/mobile only)
     scene.add.rectangle(PW / 2, CH / 2, PW, CH, 0x000000, 1)
       .setScrollFactor(0).setDepth(19);
     // Right panel — solid black
@@ -57,10 +61,6 @@ export class VirtualControls {
     edges.lineStyle(1, 0xffffff, 0.18);
     edges.lineBetween(PW,      0, PW,      CH);
     edges.lineBetween(CW - PW, 0, CW - PW, CH);
-
-    this._pointer_map = new Map();
-
-    if (!scene.sys.game.device.input.touch) return;
 
     this._create();
   }

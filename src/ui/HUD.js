@@ -15,7 +15,8 @@ export class HUD {
     this._level = level;
 
     const W  = GAME_CONFIG.width;
-    const PW = GAME_CONFIG.controlPanelWidth; // 160
+    const isTouch = scene.sys.game.device.input.touch;
+    const PW = isTouch ? GAME_CONFIG.controlPanelWidth : 0; // no panels on desktop
     const GL = PW;           // game-view left edge
     const GR = W - PW;       // game-view right edge
     const GCX = (GL + GR) / 2;

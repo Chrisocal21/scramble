@@ -20,7 +20,7 @@ const config = {
   // Scale to fill the screen while keeping aspect ratio.
   // ENVELOP fills the screen fully (may crop a little on mismatched ratios).
   scale: {
-    mode: Phaser.Scale.ENVELOP,
+    mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,
     parent: document.body,
   },
