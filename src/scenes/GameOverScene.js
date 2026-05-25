@@ -32,8 +32,8 @@ export class GameOverScene extends Phaser.Scene {
       .setInteractive({ useHandCursor: true });
 
     const level_key = (this.scene.settings.data || {}).level_key || 'w1-l1';
-    retry.on('pointerdown', () => this.scene.start('GameScene', { level_key }));
-    this.input.keyboard.once('keydown-ENTER', () => this.scene.start('GameScene', { level_key }));
+    retry.on('pointerdown', () => this._go('GameScene', { level_key }));
+    this.input.keyboard.once('keydown-ENTER', () => this._go('GameScene', { level_key }));
 
     const quit = this.add
       .text(cx, cy + 90, 'SELECT LEVEL', {
@@ -46,6 +46,15 @@ export class GameOverScene extends Phaser.Scene {
 
     quit.on('pointerover',  () => quit.setColor('#ffffff'));
     quit.on('pointerout',   () => quit.setColor('#888888'));
-    quit.on('pointerdown',  () => this.scene.start('LevelSelectScene'));
+    quit.on('pointerdown',  () => this._go('LevelSelectScene'));
+
+    this.cameras.main.fadeIn(300, 0, 0, 0);
+  }
+
+  _go(key, data) {
+    this.cameras.main.fadeOut(250, 0, 0, 0);
+    this.cameras.main.once('camerafadeoutcomplete', () => {
+      this.scene.start(key, data);
+    });
   }
 }

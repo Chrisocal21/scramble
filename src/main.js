@@ -8,6 +8,7 @@ import { LevelSelectScene } from './scenes/LevelSelectScene.js';
 import { GameScene }        from './scenes/GameScene.js';
 import { PauseScene }       from './scenes/PauseScene.js';
 import { GameOverScene }    from './scenes/GameOverScene.js';
+import { SettingsScene }    from './scenes/SettingsScene.js';
 
 const config = {
   type: Phaser.AUTO, // Prefer WebGL, fall back to Canvas
@@ -37,7 +38,7 @@ const config = {
     activePointers: 4, // Support up to 4 simultaneous touch points
   },
 
-  scene: [BootScene, MenuScene, LevelSelectScene, GameScene, PauseScene, GameOverScene],
+  scene: [BootScene, MenuScene, LevelSelectScene, GameScene, PauseScene, GameOverScene, SettingsScene],
 };
 
 new Phaser.Game(config);

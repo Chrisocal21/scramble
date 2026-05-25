@@ -45,4 +45,36 @@ export const PHYSICS = {
 
   // How early (ms) before landing a jump input is remembered and fired on touch.
   jumpBuffer: 120,
-};
+ 
+  // --- Wall slide ---
+
+  // Maximum downward speed (px/s) while pressing into a wall in the air.
+  // Much slower than terminal velocity so the player can read the situation.
+  wallSlideSpeed: 60,
+
+  // --- Wall jump ---
+
+  // Horizontal kick velocity (px/s) away from the wall on a wall jump.
+  wallJumpVelocityX: 300,
+
+  // Upward velocity (px/s) applied on a wall jump. Slightly less than a
+  // regular jump so wall-hop chains feel distinct but not overpowered.
+  wallJumpVelocityY: -480,
+
+  // How long (ms) the player can hold jump after a wall jump to extend the arc.
+  // Shorter than a normal jump hold to keep wall hops snappy.
+  wallJumpHoldDuration: 130,
+
+  // How long (ms) after a wall jump that horizontal input is ignored.
+  // Ensures the kick-off arc is committed before the player can steer back.
+  wallJumpLockout: 200,
+  // --- Dash ---
+
+  // Horizontal speed (px/s) during the dash burst.
+  dashVelocity: 580,
+
+  // How long (ms) the dash burst lasts. Short and snappy.
+  dashDuration: 140,
+
+  // How long (ms) before the player can dash again after the burst ends.
+  dashCooldown: 1100,};

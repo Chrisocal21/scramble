@@ -5,6 +5,7 @@
 import Phaser from 'phaser';
 import { GAME_CONFIG }      from '../config/game.js';
 import { WORLD_1_LEVELS, getProgress } from '../config/levels.js';
+import { SaveManager } from '../systems/SaveManager.js';
 
 const { width, height } = GAME_CONFIG;
 const CX = width  / 2;
@@ -20,9 +21,11 @@ const CARD_X0   = CX - TOTAL_W / 2 + CARD_W / 2; // center of first card
 
 // Card palette
 const PAL = {
-  locked:    { bg: 0x222222, border: 0x444444, text: '#555555' },
-  unlocked:  { bg: 0x1a3a2a, border: 0x44aa66, text: '#ccffcc' },
-  completed: { bg: 0x1a2a3a, border: 0x4488cc, text: '#cceeff' },
+  locked:          { bg: 0x222222, border: 0x444444,  text: '#555555' },
+  unlocked:        { bg: 0x1a3a2a, border: 0x44aa66,  text: '#ccffcc' },
+  completed:       { bg: 0x1a2a3a, border: 0x4488cc,  text: '#cceeff' },
+  boss_unlocked:   { bg: 0x3a1515, border: 0xaa2244,  text: '#ffcccc' },
+  boss_completed:  { bg: 0x1a1030, border: 0x8844cc,  text: '#ddaaff' },
 };
 
 export class LevelSelectScene extends Phaser.Scene {
@@ -56,7 +59,11 @@ export class LevelSelectScene extends Phaser.Scene {
       const is_completed = progress.completed.includes(level.key);
 
       const state = is_completed ? 'completed' : is_unlocked ? 'unlocked' : 'locked';
-      const pal   = PAL[state];
+      const is_boss = level.key === 'w1-boss';
+      let pal = PAL[state];
+      if (is_boss && is_completed) pal = PAL.boss_completed;
+      else if (is_boss && is_unlocked) pal = PAL.boss_unlocked;
+      else if (is_boss) pal = PAL.locked;
 
       // Card shadow
       this.add.rectangle(cx + 3, CARD_Y + 3, CARD_W, CARD_H, 0x000000, 0.4);
@@ -71,17 +78,39 @@ export class LevelSelectScene extends Phaser.Scene {
       // Level name  e.g. "1-1"
       this.add.text(cx, CARD_Y - 36, level.name, {
         fontFamily: 'monospace',
-        fontSize: '42px',
+        fontSize: level.key === 'w1-boss' ? '32px' : '42px',
         color: pal.text,
       }).setOrigin(0.5);
 
+      // Boss skull icon
+      if (level.key === 'w1-boss') {
+        this.add.text(cx, CARD_Y - 68, '☠', {
+          fontFamily: 'monospace', fontSize: '28px', color: pal.text,
+        }).setOrigin(0.5);
+      }
+
       // Status badge
       if (is_completed) {
-        this.add.text(cx, CARD_Y + 28, 'CLEAR', {
-          fontFamily: 'monospace',
-          fontSize: '22px',
-          color: '#88ddff',
+        const saved_stars = parseInt(SaveManager.get('best_' + level.key + '_stars', '0'), 10);
+        const saved_time  = SaveManager.get('best_' + level.key + '_time', null);
+        const star_str    = '★'.repeat(saved_stars) + '☆'.repeat(3 - saved_stars);
+
+        this.add.text(cx, CARD_Y - 4, 'CLEAR', {
+          fontFamily: 'monospace', fontSize: '20px', color: '#88ddff',
         }).setOrigin(0.5);
+
+        this.add.text(cx, CARD_Y + 26, star_str, {
+          fontFamily: 'monospace', fontSize: '22px', color: '#ffdd44',
+        }).setOrigin(0.5);
+
+        if (saved_time !== null) {
+          const t = parseFloat(saved_time);
+          const t_str = t < 60 ? t.toFixed(1) + 's'
+            : Math.floor(t / 60) + ':' + String(Math.floor(t % 60)).padStart(2, '0');
+          this.add.text(cx, CARD_Y + 54, 'BEST ' + t_str, {
+            fontFamily: 'monospace', fontSize: '13px', color: '#aaccaa',
+          }).setOrigin(0.5);
+        }
       } else if (!is_unlocked) {
         this.add.text(cx, CARD_Y + 28, 'LOCKED', {
           fontFamily: 'monospace',
@@ -124,12 +153,25 @@ export class LevelSelectScene extends Phaser.Scene {
 
     back.on('pointerover',  () => back.setColor('#ffffff'));
     back.on('pointerout',   () => back.setColor('#888888'));
-    back.on('pointerdown',  () => this.scene.start('MenuScene'));
+    back.on('pointerdown',  () => this._goBack());
 
-    this.input.keyboard.once('keydown-ESC', () => this.scene.start('MenuScene'));
+    this.input.keyboard.once('keydown-ESC', () => this._goBack());
+
+    // Fade in from black
+    this.cameras.main.fadeIn(300, 0, 0, 0);
   }
 
   _startLevel(level_key) {
-    this.scene.start('GameScene', { level_key });
+    this.cameras.main.fadeOut(250, 0, 0, 0);
+    this.cameras.main.once('camerafadeoutcomplete', () => {
+      this.scene.start('GameScene', { level_key });
+    });
+  }
+
+  _goBack() {
+    this.cameras.main.fadeOut(250, 0, 0, 0);
+    this.cameras.main.once('camerafadeoutcomplete', () => {
+      this.scene.start('MenuScene');
+    });
   }
 }

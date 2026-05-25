@@ -25,6 +25,9 @@ export class HealthManager {
     this.continues = defaults.continues;
     this.coins = 0;
 
+    // Shield power-up: absorbs one hit
+    this.shielded = false;
+
     // Invincibility frames tracking
     this.invincible = false;
     this._invincible_timer = null;
@@ -34,6 +37,13 @@ export class HealthManager {
   // Returns true if the player actually took damage (not blocked by iframes).
   takeDamage(amount = 1) {
     if (this.invincible) return false;
+
+    // Shield absorbs the hit instead of HP
+    if (this.shielded) {
+      this.shielded = false;
+      this._startInvincibility(600);  // brief iframes after shield breaks
+      return true;  // hit registered (visual/audio feedback fires), but no HP lost
+    }
 
     this.hp = Math.max(0, this.hp - amount);
     this._startInvincibility();
@@ -47,6 +57,10 @@ export class HealthManager {
 
   addCoins(amount = 1) {
     this.coins += amount;
+  }
+
+  activateShield() {
+    this.shielded = true;
   }
 
   heal(amount = 1) {
@@ -67,6 +81,11 @@ export class HealthManager {
   }
 
   _handleDeath() {
+    // Let the scene freeze the player and play a death animation first.
+    if (typeof this.scene._onPlayerDeath === 'function') {
+      this.scene._onPlayerDeath();
+    }
+
     if (this.mode === MODES.MODERN) {
       // Restart level, full HP, no penalty.
       this.hp = this.maxHp;

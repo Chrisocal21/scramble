@@ -1,8 +1,8 @@
 // VirtualControls.js -- On-screen controls for mobile.
 //
 // Layout: two solid side panels flank the game view.
-//   Left panel  (x 0–160):  D-pad cross  — left half = move left, right half = move right
-//   Right panel (x 976–1136): A button   — anywhere in panel = jump
+//   Left panel  (x 0–160):     D-pad cross — left half = move left, right half = move right
+//   Right panel (x 976–1136):  top 30% = B (dash), bottom 70% = A (jump)
 //
 // No overlap with the game view whatsoever.
 
@@ -19,19 +19,29 @@ const DP_THICK = 44;
 const DP_LEN   = 46;       // arm length (fits within 160px panel)
 const DP_RAD   = 8;
 
-// --- A button geometry (centered in right panel) ---
-const A_CX = CW - PW / 2;  // 1056
-const A_CY = CH / 2;        // 270
-const A_R  = 46;
+// --- A button (jump) -- lower 70% of right panel ---
+const A_CX = CW - PW / 2;   // 1056
+const A_CY = CH * 0.65;      // 351
+const A_R  = 42;
 
-// --- Hit areas: full-height half-panel splits so the whole panel is tappable ---
-// Left half of left panel  = move left
-// Right half of left panel = move right
-// Entire right panel       = jump
+// --- B button (dash) -- upper 30% of right panel ---
+const B_CX = CW - PW / 2;   // 1056
+const B_CY = CH * 0.15;      // 81
+const B_R  = 32;
+
+// y-coordinate dividing dash and jump zones in the right panel
+const RIGHT_SPLIT = CH * 0.30;  // 162
+
+// --- Hit areas ---
+// Left half of left panel   = move left
+// Right half of left panel  = move right
+// Top 30% of right panel    = dash
+// Bottom 70% of right panel = jump
 const BTN = {
-  left:  { x: PW * 0.25,      y: CH / 2, w: PW * 0.5, h: CH },
-  right: { x: PW * 0.75,      y: CH / 2, w: PW * 0.5, h: CH },
-  jump:  { x: CW - PW * 0.5,  y: CH / 2, w: PW,        h: CH },
+  left:  { x: PW * 0.25,     y: CH / 2,    w: PW * 0.5, h: CH },
+  right: { x: PW * 0.75,     y: CH / 2,    w: PW * 0.5, h: CH },
+  dash:  { x: CW - PW * 0.5, y: CH * 0.15, w: PW,       h: CH * 0.30 },
+  jump:  { x: CW - PW * 0.5, y: CH * 0.65, w: PW,       h: CH * 0.70 },
 };
 
 // --- Colors ---
@@ -40,6 +50,9 @@ const DPAD_PRESS = 0.80;
 const A_IDLE     = 0.22;
 const A_PRESS    = 0.80;
 const A_COLOR    = 0xdd3333;
+const B_IDLE     = 0.22;
+const B_PRESS    = 0.80;
+const B_COLOR    = 0x4488ff;
 
 export class VirtualControls {
   constructor(scene, input_manager) {
@@ -75,15 +88,29 @@ export class VirtualControls {
 
     // Per-button gfx for interactive arm highlights
     this._btns = {};
-    for (const name of ['left', 'right', 'jump']) {
+    for (const name of ['left', 'right', 'jump', 'dash']) {
       const gfx = scene.add.graphics().setScrollFactor(0).setDepth(21);
       this._btns[name] = { gfx, pressed: false };
       this._draw(name, false);
     }
 
+    // Thin divider between dash and jump zones
+    const divider = scene.add.graphics().setScrollFactor(0).setDepth(20);
+    divider.lineStyle(1, 0xffffff, 0.12);
+    divider.lineBetween(CW - PW, RIGHT_SPLIT, CW, RIGHT_SPLIT);
+
+    // Cooldown arc drawn over the B button during dash cooldown
+    this._dash_cooldown_gfx = scene.add.graphics().setScrollFactor(0).setDepth(23);
+    this._dash_cooldown_fraction = 1;
+
     // "A" label on the jump button
     this._a_label = scene.add.text(A_CX, A_CY, 'A', {
-      fontSize: '38px', color: '#ffffff', fontFamily: 'sans-serif', fontStyle: 'bold',
+      fontSize: '34px', color: '#ffffff', fontFamily: 'sans-serif', fontStyle: 'bold',
+    }).setOrigin(0.5, 0.5).setScrollFactor(0).setDepth(22).setAlpha(0.90);
+
+    // "B" label on the dash button
+    this._b_label = scene.add.text(B_CX, B_CY, 'B', {
+      fontSize: '26px', color: '#ffffff', fontFamily: 'sans-serif', fontStyle: 'bold',
     }).setOrigin(0.5, 0.5).setScrollFactor(0).setDepth(22).setAlpha(0.90);
 
     scene.input.on('pointerdown', (p) => this._onDown(p));
@@ -117,7 +144,7 @@ export class VirtualControls {
         ? DP_CX - DP_LEN - DP_THICK / 2   // left arm start
         : DP_CX + DP_THICK / 2;            // right arm start
       gfx.fillRoundedRect(arm_x, DP_CY - DP_THICK / 2, DP_LEN, DP_THICK, DP_RAD);
-    } else {
+    } else if (name === 'jump') {
       // A button circle
       const alpha  = pressed ? A_PRESS : A_IDLE;
       const color  = pressed ? A_COLOR : 0xffffff;
@@ -125,6 +152,14 @@ export class VirtualControls {
       gfx.fillCircle(A_CX, A_CY, A_R);
       gfx.lineStyle(2, 0xffffff, pressed ? 0.90 : 0.40);
       gfx.strokeCircle(A_CX, A_CY, A_R);
+    } else {
+      // B button circle (dash)
+      const alpha = pressed ? B_PRESS : B_IDLE;
+      const color = pressed ? B_COLOR : 0xffffff;
+      gfx.fillStyle(color, alpha);
+      gfx.fillCircle(B_CX, B_CY, B_R);
+      gfx.lineStyle(2, 0xffffff, pressed ? 0.90 : 0.40);
+      gfx.strokeCircle(B_CX, B_CY, B_R);
     }
   }
 
@@ -173,6 +208,26 @@ export class VirtualControls {
     this._btns[name].pressed = false;
     this._draw(name, false);
     this.input_manager.setVirtual(name, false);
+  }
+
+  // Called from GameScene.update() with fraction 0 (just dashed) → 1 (ready).
+  setDashCooldown(fraction) {
+    this._dash_cooldown_fraction = fraction;
+    if (this._dash_cooldown_gfx) this._drawDashCooldown();
+  }
+
+  // Clockwise arc around the B button showing how much cooldown remains.
+  // Full circle at fraction 0, nothing drawn at fraction 1.
+  _drawDashCooldown() {
+    const g = this._dash_cooldown_gfx;
+    g.clear();
+    const f = this._dash_cooldown_fraction;
+    if (f >= 1) return;
+    const end_angle = -Math.PI / 2 + Math.PI * 2 * (1 - f);
+    g.lineStyle(3, 0xffffff, 0.75);
+    g.beginPath();
+    g.arc(B_CX, B_CY, B_R + 7, -Math.PI / 2, end_angle, false);
+    g.strokePath();
   }
 
   update() {}

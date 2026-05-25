@@ -5,11 +5,35 @@
 // State machine: patrol -> stunned -> dead
 
 import Phaser from 'phaser';
+import { AudioManager } from '../systems/AudioManager.js';
 
 const PATROL_SPEED = 80;
 const ENEMY_W = 28;
 const ENEMY_H = 28;
 const STUN_DURATION = 400; // ms before disappearing after stomp
+
+// Shared burst helper -- radiates colored puffs from an enemy on stomp.
+function _stompBurst(scene, x, y, color) {
+  for (let i = 0; i < 7; i++) {
+    const angle = (i / 7) * Math.PI * 2;
+    const dist  = 40 + (i * 17) % 30;
+    const g = scene.add.graphics();
+    g.fillStyle(color, 0.9);
+    g.fillCircle(0, 0, 3 + (i % 3));
+    g.setPosition(x, y).setDepth(8);
+    scene.tweens.add({
+      targets:  g,
+      x:        x + Math.cos(angle) * dist,
+      y:        y + Math.sin(angle) * dist,
+      alpha:    0,
+      scaleX:   0.15,
+      scaleY:   0.15,
+      duration: 260 + (i * 20) % 80,
+      ease:     'Cubic.Out',
+      onComplete: () => g.destroy(),
+    });
+  }
+}
 
 export class PatrolEnemy extends Phaser.GameObjects.Container {
   constructor(scene, x, y, patrol_left, patrol_right) {
@@ -70,6 +94,8 @@ export class PatrolEnemy extends Phaser.GameObjects.Container {
     this.body.velocity.x = 0;
     this._draw();
     player.stompBounce();
+    AudioManager.playSfx('stomp');
+    _stompBurst(this.scene, this.x, this.y, 0xff8833);
 
     // Squish animation: flatten quickly then fade
     this.scene.tweens.add({

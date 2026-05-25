@@ -55,6 +55,11 @@ export const WORLD_1_LEVELS = [
       [34,7],[35,7],[36,7],
       [44,13],[45,13],[46,13],
     ],
+    // Power-ups: [col, row, type]
+    powerups: [
+      [15, 10, 'speed'],    // on the mid platform, rewards early skill
+      [42,  6, 'shield'],   // on the high platform above enemies -- risk/reward
+    ],
   },
 
   // ── 1-2: First Steps Up ────────────────────────────────────────────────────
@@ -104,6 +109,21 @@ export const WORLD_1_LEVELS = [
       [52,10],[53,10],[54,10],
       [62,9],[63,9],[64,9],
       [67,13],[68,13],
+    ],
+    // First hazard introduction: two pairs of spikes on the mid-level ground.
+    // Players learn to jump over ground-level obstacles.
+    spikes: [
+      [22, 14], [23, 14],   // mid section, after first pit
+      [48, 14], [49, 14],   // late section, after second pit
+    ],
+    // One checkpoint at the halfway mark (start of the second ground section).
+    checkpoints: [
+      [27, 13],  // second ground section (cols 19-34), past the first pit
+    ],
+    // Power-ups: [col, row, type]
+    powerups: [
+      [36,  7, 'jump'],    // high platform peak -- rewards taking the sky route
+      [58, 12, 'shield'],  // on the third ground, just after the second pit
     ],
   },
 
@@ -167,25 +187,53 @@ export const WORLD_1_LEVELS = [
       [74,9],[75,9],[76,9],
       [77,13],[78,13],
     ],
+    // Spikes on the ground sections; a moving platform bridges gap 14-15
+    // giving the player a slow-moving option vs the fixed platforms above.
+    spikes: [
+      [19, 14], [36, 14],   // just past each pit -- punish a short landing
+      [55, 14],             // third pit exit
+    ],
+    moving_platforms: [
+      // [tx0, ty0, tx1, ty1, speed]
+      // Horizontal platform at row 10, travels cols 9-20, bridges gap at 14-15.
+      [9, 10, 20, 10, 65],
+    ],
+    // Jumper guards the mid-section ground: hops toward the player,
+    // forcing them to time the landing more carefully.
+    jumpers: [
+      [42, 13],   // third ground section (cols 34-49), row 13 sits on floor
+    ],
+    // One checkpoint at the midpoint of the level.
+    checkpoints: [
+      [40, 13],  // third ground section (cols 34-49), before the jumper
+    ],
+    // Power-ups: [col, row, type]
+    powerups: [
+      [25,  6, 'speed'],   // on the high platform section -- rewards climbing
+      [62,  7, 'jump'],    // mid-air platform route, encourages sky path
+      [70, 12, 'shield'],  // ground level near last stretch
+    ],
   },
 
   // ── 1-4: The Gauntlet ──────────────────────────────────────────────────────
   // Five pits, eleven enemies, longest level. Every platform has a patrol on it.
   // Coin density is highest here -- reward for survival.
+  // Ends with a required wall-jump shaft: the only exit is up.
   {
     key: 'w1-l4',
     name: '1-4',
-    world_w: 92,
+    world_w: 100,
     world_h: 17,
     spawn: [2, 13],
-    goal:  [89, 13],
+    goal:  [97, 13],
     ground: [
       [14,  0, 11],   // (gap cols 12-13)
       [14, 14, 26],   // (gap cols 27-28)
       [14, 29, 42],   // (gap cols 43-44)
       [14, 45, 58],   // (gap cols 59-60)
       [14, 61, 74],   // (gap cols 75-76)
-      [14, 77, 91],
+      [14, 77, 87],   // approach to shaft (shaft opening cols 88-92)
+      [14, 93, 99],   // landing after shaft, to goal
     ],
     platforms: [
       [11,  3,  7],
@@ -201,10 +249,19 @@ export const WORLD_1_LEVELS = [
       [10, 69, 73],
       [12, 76, 80],   // spans gap 75-76
       [ 9, 83, 87],
+      [ 7, 88, 92],   // exit bridge -- top of the wall-jump shaft
     ],
     oneway: [
       [12,  4,  6],
       [12, 42, 44],
+    ],
+    // Vertical walls forming the wall-jump shaft at cols 88-92.
+    // Left wall: col 88, right wall: col 92. Inner gap cols 89-91 (3 tiles = 96px).
+    // Shaft height: rows 8-13 (6 tiles = 192px). Player enters by stepping off
+    // the ground at col 87 and must wall-jump up to the exit bridge at row 7.
+    walls: [
+      [88, 8, 13],
+      [92, 8, 13],
     ],
     enemies: [
       [ 4, 10,  3,  7],
@@ -234,8 +291,80 @@ export const WORLD_1_LEVELS = [
       [70,9],[71,9],[72,9],
       [77,11],[78,11],[79,11],
       [84,8],[85,8],[86,8],
-      [87,13],[88,13],
+      // Bonus coins above the shaft -- reward for a clean wall-jump climb.
+      [89,5],[90,5],[91,5],
+      [94,13],[95,13],
     ],
+    // 1-4 introduces all four hazard types.
+    // Spikes punish safe landings; a moving platform adds a skill route over gap 43-44;
+    // a falling platform at row 7 creates urgency near the end;
+    // a conveyor belt on the fifth ground section pushes the player rightward.
+    spikes: [
+      [14, 14], [29, 14],   // pit exits
+      [60, 14], [76, 14],   // late pit exits
+    ],
+    moving_platforms: [
+      // Horizontal bridge over the cols 43-44 gap, traveling at row 8.
+      // [tx0, ty0, tx1, ty1, speed]
+      [37, 8, 48, 8, 80],
+    ],
+    falling_platforms: [
+      // [row, c0, c1] -- 4-tile crumble shortcut above the high platforms near end
+      [6, 83, 86],
+    ],
+    conveyor: [
+      // [row, c0, c1, dir] -- rightward belt on the fifth ground section
+      [14, 63, 68, 1],
+    ],
+    // Two jumpers guard mid-level ground sections;
+    // a thrower near the end fires left at the approaching player.
+    jumpers: [
+      [18, 13],   // first large ground section
+      [48, 13],   // third ground section, just past the moving platform
+    ],
+    throwers: [
+      [80, 13, -1],  // fires left -- punishes the player coming in from the last pit
+    ],
+    // Two checkpoints divide the gauntlet into thirds; a third sits just before
+    // the wall-jump shaft so a failed attempt doesn't force the full run.
+    checkpoints: [
+      [34, 13],  // third ground section (cols 29-42), after second pit
+      [71, 13],  // fifth ground section (cols 61-74), after fourth pit
+      [82, 13],  // last approach, just before the wall-jump shaft
+    ],
+    // Power-ups: [col, row, type]
+    powerups: [
+      [19,  6, 'speed'],   // high platform, early section
+      [56,  7, 'shield'],  // mid-level platform
+      [73,  9, 'jump'],    // platform near the wall-jump shaft approach
+    ],
+  },
+
+  // ── BOSS: King Scramble ────────────────────────────────────────────────────
+  // A flat arena with three raised platforms. No pits, no standard enemies.
+  // The boss (BossEnemy) replaces the goal -- level ends when it is defeated.
+  // 3 coins sit on the centre platform; collecting all three + a deathless clear
+  // earns 3 stars. Deathless alone earns 2.
+  {
+    key: 'w1-boss',
+    name: 'BOSS',
+    world_w: 30,
+    world_h: 17,
+    spawn: [3, 13],
+    goal: null,         // no flag -- level ends via boss_defeated event
+    ground: [
+      [14, 0, 29],      // full flat floor
+    ],
+    platforms: [
+      [9,  4,  7],      // left perch
+      [9, 12, 17],      // centre perch (boss stomps toward here)
+      [9, 22, 25],      // right perch
+    ],
+    coins: [
+      [13, 8], [14, 8], [15, 8],   // on the centre platform (optional bonus)
+    ],
+    // Boss spawn: [col, row]
+    boss: [15, 13],
   },
 ];
 
